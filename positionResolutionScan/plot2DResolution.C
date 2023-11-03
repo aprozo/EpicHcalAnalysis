@@ -8,6 +8,7 @@
 #include "TGraph2D.h"
 #include "TH1D.h"
 #include "TCanvas.h"
+#include "TStyle.h"
 
 const Double_t globalZ = 383.95; // first HCAL layer
 const Double_t pi = 3.14159265358979323846;
@@ -18,6 +19,9 @@ Double_t getPhi(const Double_t &x, const Double_t &y) { return atan2(y, x); }
 
 struct TileHists
 {
+    TileHists()
+    {
+    }
 
     TileHists(TString name)
     {
@@ -44,13 +48,13 @@ struct TileHists
     void Draw(TString outPdf, TCanvas *can)
     {
 
-        tilePhiTheta->Draw("TRI1");
+        tilePhiTheta->Draw("pcol");
         can->SaveAs(outPdf);
 
-        tilePhiEta->Draw("TRI1");
+        tilePhiEta->Draw("pcol");
         can->SaveAs(outPdf);
 
-        tileXY->Draw("TRI1");
+        tileXY->Draw("pcol");
         can->SaveAs(outPdf);
     }
 
@@ -90,16 +94,20 @@ void plot2DResolution(TString outFile = "sectorResolution")
 
     cout << "Number of points : " << tileMap.size() << endl;
 
-    TFile *inputFile = new TFile("output_hists.root", "READ");
+    TFile *inputFile = new TFile("output.root", "READ");
 
-    TileHists thetaHcal("Theta Hcal");
-    TileHists phiHcal("Phi Hcal");
+    TileHists resolution[12];
+    TString labels[12] = {"hcal+ecal #theta", "hcal+ecal #phi",
+                          "hcal #theta", "hcal #phi",
+                          "ecal #theta", "ecal #phi",
+                          "hcal+ecal #theta Truth", "hcal+ecal #phi Truth",
+                          "hcal #theta Truth", "hcal #phi Truth",
+                          "ecal #theta Truth", "ecal #phi Truth"};
 
-    // TileHists thetaEcal("Theta Ecal");
-    // TileHists phiEcal("Phi Ecal");
-
-    TileHists phiSum("Phi Hcal+Ecal");
-    TileHists thetaSum("Theta Hcal+Ecal");
+    for (int i = 0; i < 12; i++)
+    {
+        resolution[i] = TileHists(labels[i]);
+    }
 
     for (auto &angle : tileMap)
     {
@@ -116,50 +124,31 @@ void plot2DResolution(TString outFile = "sectorResolution")
 
         Double_t phi = angle.first.Atof();
         Double_t theta = angle.second.Atof();
-
-        Double_t fwhmThetaSum = hist->GetBinContent(1);
-        Double_t fwhmPhiSum = hist->GetBinContent(2);
-        Double_t fwhmThetaHcal = hist->GetBinContent(3);
-        Double_t fwhmPhiHcal = hist->GetBinContent(4);
-
-        if (fwhmThetaSum < 0.2 && fwhmThetaSum >= 0.0)
+        for (int i = 0; i < 12; i++)
         {
-            thetaSum.Fill(phi, theta, fwhmThetaSum);
-        }
-
-        if (fwhmPhiSum < 10 && fwhmPhiSum >= 0.0)
-        {
-            phiSum.Fill(phi, theta, fwhmPhiSum);
-        }
-
-        if (fwhmThetaHcal < 0.2 && fwhmThetaHcal >= 0.0)
-        {
-            thetaHcal.Fill(phi, theta, fwhmThetaHcal);
-        }
-
-        if (fwhmPhiHcal < 10 && fwhmPhiHcal >= 0.0)
-        {
-            phiHcal.Fill(phi, theta, fwhmPhiHcal);
+            Float_t fwhm = hist->GetBinContent(i + 1);
+            if (fwhm > 0.)
+                resolution[i].Fill(phi, theta, hist->GetBinContent(i + 1));
         }
     }
     TCanvas *can = new TCanvas("can", "can", 2000, 1000);
     can->cd();
     TString outPdf = outFile + ".pdf";
     can->SaveAs(outPdf + "[");
-    //can->SetLogz();
-    thetaHcal.Draw(outPdf, can);
-    phiHcal.Draw(outPdf, can);
-    phiSum.Draw(outPdf, can);
-    thetaSum.Draw(outPdf, can);
+
+    for (int i = 0; i < 12; i++)
+    {
+        resolution[i].Draw(outPdf, can);
+    }
 
     can->SaveAs(outPdf + "]");
 
     TFile *output = new TFile("sectorResolution.root", "RECREATE");
     output->cd();
-    thetaHcal.Write();
-    phiHcal.Write();
-    phiSum.Write();
-    thetaSum.Write();
+    for (int i = 0; i < 12; i++)
+    {
+        resolution[i].Write();
+    }
 
     output->Close();
 }
