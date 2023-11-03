@@ -13,7 +13,7 @@ if [ ! -e "$input_file" ]; then
   echo "Input file '$input_file' does not exist."
   exit 1
 fi
-
+mkdir -p /gpfs/mnt/gpfs02/eic/alpro/output/positionResolutionScan/log
 rm /gpfs/mnt/gpfs02/eic/alpro/output/positionResolutionScan/log/*
 
 # Loop through each line in the input file
