@@ -1,0 +1,8 @@
+# Compiled source #
+###################
+*.root
+*.pcm
+*dictContent.h
+*.d
+*.so
+*/.vscode/
