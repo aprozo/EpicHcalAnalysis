@@ -28,10 +28,14 @@ struct TileHists
         tilePhiTheta = new TGraph2D();
         tilePhiEta = new TGraph2D();
         tileXY = new TGraph2D();
-
-        tilePhiTheta->SetTitle(name + " ;#phi, deg; #theta, deg ; fwhm");
-        tilePhiEta->SetTitle(name + " ;#phi, deg; #eta; fwhm");
-        tileXY->SetTitle(name + "  ;x,mm;y,mm; fwhm");
+        TString titleZ;
+        if (name.Contains("phi"))
+            titleZ = "#Delta#phi/#phi";
+        else
+            titleZ = "#Delta#theta/#theta";
+        tilePhiTheta->SetTitle(name + " ;#phi, deg; #theta, deg ;" + titleZ);
+        tilePhiEta->SetTitle(name + " ;#phi, deg; #eta;" + titleZ);
+        tileXY->SetTitle(name + "  ;x,mm;y,mm;" + titleZ);
     }
 
     void Fill(const Double_t phi, const Double_t theta, const Double_t fwhm)
@@ -47,13 +51,15 @@ struct TileHists
 
     void Draw(TString outPdf, TCanvas *can)
     {
-
+        // tilePhiTheta->GetYaxis()->SetNdivisions(505);
+        // tilePhiTheta->GetZaxis()->SetNdivisions(505);
         tilePhiTheta->Draw("pcol");
         can->SaveAs(outPdf);
 
         tilePhiEta->Draw("pcol");
         can->SaveAs(outPdf);
 
+        tileXY->GetYaxis()->SetNdivisions(305);
         tileXY->Draw("pcol");
         can->SaveAs(outPdf);
     }
@@ -72,6 +78,8 @@ struct TileHists
 
 void plot2DResolution(TString outFile = "sectorResolution")
 {
+
+    // gStyle->SetTitleOffset(1.2, "y");
     set<pair<TString, TString>> tileMap;
 
     fstream fin;
@@ -96,15 +104,16 @@ void plot2DResolution(TString outFile = "sectorResolution")
 
     TFile *inputFile = new TFile("output.root", "READ");
 
-    TileHists resolution[12];
-    TString labels[12] = {"hcal+ecal #theta", "hcal+ecal #phi",
-                          "hcal #theta", "hcal #phi",
-                          "ecal #theta", "ecal #phi",
-                          "hcal+ecal #theta Truth", "hcal+ecal #phi Truth",
-                          "hcal #theta Truth", "hcal #phi Truth",
-                          "ecal #theta Truth", "ecal #phi Truth"};
+    const Int_t nBins = 12;
+    TileHists resolution[nBins];
+    TString labels[nBins] = {"hcal+ecal #theta", "hcal+ecal #phi",
+                             "hcal #theta", "hcal #phi",
+                             "ecal #theta", "ecal #phi",
+                             "hcal+ecal #theta Truth", "hcal+ecal #phi Truth",
+                             "hcal #theta Truth", "hcal #phi Truth",
+                             "ecal #theta Truth", "ecal #phi Truth"};
 
-    for (int i = 0; i < 12; i++)
+    for (int i = 0; i < nBins; i++)
     {
         resolution[i] = TileHists(labels[i]);
     }
@@ -124,10 +133,14 @@ void plot2DResolution(TString outFile = "sectorResolution")
 
         Double_t phi = angle.first.Atof();
         Double_t theta = angle.second.Atof();
-        for (int i = 0; i < 12; i++)
+        for (int i = 0; i < nBins; i++)
         {
             Float_t fwhm = hist->GetBinContent(i + 1);
-            if (fwhm > 0.)
+            Double_t upperCut = 2.;
+            if (i == 0 || i == 6) // theta hcal+ecal Resolution
+                upperCut = 0.1;
+
+            if (fwhm > 0. && fwhm < upperCut)
                 resolution[i].Fill(phi, theta, hist->GetBinContent(i + 1));
         }
     }
@@ -136,7 +149,7 @@ void plot2DResolution(TString outFile = "sectorResolution")
     TString outPdf = outFile + ".pdf";
     can->SaveAs(outPdf + "[");
 
-    for (int i = 0; i < 12; i++)
+    for (int i = 0; i < nBins; i++)
     {
         resolution[i].Draw(outPdf, can);
     }
@@ -145,7 +158,7 @@ void plot2DResolution(TString outFile = "sectorResolution")
 
     TFile *output = new TFile("sectorResolution.root", "RECREATE");
     output->cd();
-    for (int i = 0; i < 12; i++)
+    for (int i = 0; i < nBins; i++)
     {
         resolution[i].Write();
     }
