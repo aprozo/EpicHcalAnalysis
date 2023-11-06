@@ -22,9 +22,8 @@ hadd -f -k -j output.root Phi*Theta*/outputFill.root
 ```
 Then copy `output.root` to the working dir. One can further analyze it and plot 2D position resolution histogram using `plot2DResolution.C`
 
-![image](https://github.com/aprozo/EpicHcalAnalysis/assets/33087030/ffa67fb3-6967-4933-b51a-c1e51ff2cfed)
 
-
+<img src="https://github.com/aprozo/EpicHcalAnalysis/assets/33087030/ffa67fb3-6967-4933-b51a-c1e51ff2cfed" width="500">
 
 ## mapAngleTiles
 
