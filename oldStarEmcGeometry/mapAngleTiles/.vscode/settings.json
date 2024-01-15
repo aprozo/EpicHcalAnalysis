@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.cxx": "cpp",
+        "calculateMap.C": "cpp",
+        "cmath": "cpp",
+        "iosfwd": "cpp",
+        "set": "cpp",
+        "ostream": "cpp"
+    }
+}

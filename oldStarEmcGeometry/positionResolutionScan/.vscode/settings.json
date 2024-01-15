@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "*.cxx": "cpp",
+        "readHCalRecoReader.C": "cpp",
+        "fithistos_1D.C": "cpp",
+        "random": "cpp",
+        "ostream": "cpp",
+        "plot2DResolution.C": "cpp",
+        ".rootlogon.C": "cpp",
+        "calculateMap.C": "cpp",
+        "cmath": "cpp",
+        "numbers": "cpp",
+        "bitset": "cpp",
+        "set": "cpp",
+        "iosfwd": "cpp"
+    }
+}

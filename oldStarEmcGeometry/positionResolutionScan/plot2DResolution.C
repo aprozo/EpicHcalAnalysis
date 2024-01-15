@@ -79,14 +79,14 @@ struct TileHists
     {
         // tilePhiTheta->GetYaxis()->SetNdivisions(505);
         // tilePhiTheta->GetZaxis()->SetNdivisions(505);
-        tilePhiTheta->Draw("PCOL ");
+        tilePhiTheta->Draw("colz");
         can->SaveAs(outPdf);
 
-        tilePhiEta->Draw("PCOL");
+        tilePhiEta->Draw("colz");
         can->SaveAs(outPdf);
 
         tileXY->GetYaxis()->SetNdivisions(305);
-        tileXY->Draw("PCOL");
+        tileXY->Draw("colz");
         can->SaveAs(outPdf);
     }
 
@@ -134,7 +134,7 @@ void plot2DResolution(TString outFile = "sectorResolution")
 
     cout << "Number of points : " << tileMap.size() << endl;
 
-    TFile *inputFile = new TFile("outputNewGeometry.root", "READ");
+    TFile *inputFile = new TFile("output.root", "READ");
 
     const Int_t nBins = 12;
     TileHists resolution[nBins];
