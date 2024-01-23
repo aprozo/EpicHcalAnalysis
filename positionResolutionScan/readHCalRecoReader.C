@@ -53,8 +53,8 @@ struct Cluster
 
   Cluster &operator-(const Cluster &mc_position)
   {
-    thetaResolution = (theta - mc_position.theta) / mc_position.theta;
-    phiResolution = (phi - mc_position.phi) / mc_position.phi;
+    thetaResolution = (theta - mc_position.theta);
+    phiResolution = (phi - mc_position.phi);
     return *this;
   }
 
@@ -81,10 +81,12 @@ struct ClusterHists
   {
     hTheta = new TH1D("hTheta_" + _name, _name + " Cluster #theta_{cluster}; #theta_{cluster} [rad]; Entries", 500, 2, 4);
     hPhi = new TH1D("hPhi_" + _name, _name + " Cluster #phi_{cluster}; #phi_{cluster} [rad]; Entries", 500, -TMath::Pi(), TMath::Pi());
-    hThetaResol = new TH1D("hThetaResolution_" + _name, _name + " Cluster #theta Resolution ; #Delta#theta/#theta; Entries", 500, 1, 1);
-    hPhiResol = new TH1D("hPhiResolution_" + _name, _name + " Cluster #phi Resolution; #Delta#phi/#phi; Entries", 500, 1, 1);
+    hThetaResol = new TH1D("hThetaResolution_" + _name, _name + " Cluster #theta Resolution ; #Delta#theta; Entries", 500, 1, 1);
+    hPhiResol = new TH1D("hPhiResolution_" + _name, _name + " Cluster #phi Resolution; #Delta#phi; Entries", 500, 1, 1);
     hEnergy = new TH1D("hEnergy_" + _name, _name + " Cluster energy; E [GeV]; Entries", 10000, 0, 10);
     hPos = new TH2D("hPosition_" + _name, _name + " Cluster position x,y; x [mm]; y [mm]; Entries", 300, -1500, 1500, 300, -1500, 1500);
+
+    hPhiEnergy = new TH2D("hPhiEnergy_" + _name, _name + " Cluster #phi vs Energy; #phi; Energy", 100, -TMath::Pi(), TMath::Pi(), 100, 0, 10);
     name = _name;
   }
 
@@ -113,7 +115,7 @@ struct ClusterHists
   void DrawTogether(TCanvas *can, TString outPdf, ClusterHists &ecalHists, ClusterHists &sumHists)
   {
     can->cd();
-    sumHists.hPhiResol->SetTitle("ECal, HCal, Sum #phi Resolution; #Delta#phi/#phi; Entries");
+    sumHists.hPhiResol->SetTitle("ECal, HCal, Sum #phi Resolution; #Delta#phi; Entries");
     sumHists.hPhiResol->SetMarkerColor(kBlack);
     sumHists.hPhiResol->SetLineColor(kBlack);
     sumHists.hPhiResol->GetYaxis()->SetRangeUser(0, 1.2 * getMaximum(sumHists.hPhiResol, ecalHists.hPhiResol, hPhiResol));
@@ -130,7 +132,7 @@ struct ClusterHists
     leg.Draw();
 
     can->SaveAs(outPdf);
-    sumHists.hThetaResol->SetTitle("ECal, HCal, Sum #theta Resolution; #Delta#theta/#theta; Entries");
+    sumHists.hThetaResol->SetTitle("ECal, HCal, Sum #theta Resolution; #Delta#theta; Entries");
     sumHists.hThetaResol->SetMarkerColor(kBlack);
     sumHists.hThetaResol->SetLineColor(kBlack);
     sumHists.hThetaResol->GetYaxis()->SetRangeUser(0, 1.2 * getMaximum(sumHists.hThetaResol, ecalHists.hThetaResol, hThetaResol));
@@ -176,24 +178,24 @@ struct ClusterHists
   Double_t calculateFWHM(TString varname)
   {
     TH1D *hist;
-    TF1 *fitfunc = new TF1("fitfunc", "gaus", -1, 1);
+    TF1 *fitfunc = new TF1("fitfunc", "gaus", -4, 4);
     fitfunc->SetParNames("Area", "Mean", "Sigma");
     fitfunc->SetLineColor(kViolet);
 
     if (varname.Contains("theta"))
     {
       hist = hThetaResol;
-      fitfunc->SetRange(-0.02, 0.02);
-      fitfunc->SetParLimits(1, -0.1, 0.1);
-      fitfunc->SetParLimits(2, 0, 0.1);
+      // fitfunc->SetRange(-0.02, 0.02);
+      // fitfunc->SetParLimits(1, -0.1, 0.1);
+      // fitfunc->SetParLimits(2, 0, 0.1);
     }
     else if (varname.Contains("phi"))
     {
       hist = hPhiResol;
 
-      fitfunc->SetRange(-0.5, 0.5);
-      fitfunc->SetParLimits(1, -0.5, 0.5);
-      fitfunc->SetParLimits(2, 0, 1);
+      // fitfunc->SetRange(-0.5, 0.5);
+      // fitfunc->SetParLimits(1, -0.5, 0.5);
+      // fitfunc->SetParLimits(2, 0, 1);
     }
     else
     {
@@ -201,12 +203,12 @@ struct ClusterHists
       return -1;
     }
 
-    Double_t x_min = hist->GetMean() - hist->GetStdDev();
-    Double_t x_max = hist->GetMean() + hist->GetStdDev();
-    hist->GetXaxis()->SetRangeUser(x_min, x_max);
+    // Double_t x_min = hist->GetMean() - hist->GetStdDev();
+    // Double_t x_max = hist->GetMean() + hist->GetStdDev();
+    // hist->GetXaxis()->SetRangeUser(x_min, x_max);
 
     fitfunc->SetParameters(hist->GetMaximum(), hist->GetMean(), hist->GetStdDev());
-    fitfunc->SetParLimits(0, 0, 1.2 * hist->GetMaximum());
+    // fitfunc->SetParLimits(0, 0, 1.2 * hist->GetMaximum());
 
     hist->GetYaxis()->SetTitleOffset(1.25);
     hist->SetMarkerStyle(43);
@@ -217,13 +219,13 @@ struct ClusterHists
     hist->Draw("p");
     Double_t sigma = fitfunc->GetParameter(2);
 
-    // Double_t fwhm = hist->GetStdDev(); // sigma * 2.355;
-    Double_t fwhm = sigma * 2.355;
+    Double_t fwhm = hist->GetStdDev(); // sigma * 2.355;
+    // Double_t fwhm = sigma * 2.355;
     TLatex *tl = new TLatex();
     tl->SetTextSize(0.05);
     tl->DrawLatexNDC(0.12, 0.5, "#" + varname + " " + name);
     tl->DrawLatexNDC(0.12, 0.4, Form("Mean ~ %.2f", hist->GetMean()));
-    tl->DrawLatexNDC(0.12, 0.3, Form("FWHM ~ %.2f", fwhm));
+    tl->DrawLatexNDC(0.12, 0.3, Form("Sigma ~ %.2f", fwhm));
 
     return fwhm;
   }
@@ -249,10 +251,11 @@ struct ClusterHists
   TH1D *hPhiResol;
   TH1D *hEnergy;
   TH2D *hPos;
+  TH2D *hPhiEnergy;
 };
 
 // void readHCalRecoReader(TString inFileName = "eicrecon_neutron_5GeV.edm4eic.root", TString outFileName = "test.root")
-void readHCalRecoReader(TString inFileName = "eicrecon_neutron_50000events_p5gev_phi68.1289_theta170.913.edm4eic.root", TString outFileName = "test.root")
+void readHCalRecoReader(TString inFileName = "../output_eicrecon.edm4eic.root", TString outFileName = "test.root")
 {
 
   //==========Style of the plot============
@@ -307,6 +310,18 @@ void readHCalRecoReader(TString inFileName = "eicrecon_neutron_50000events_p5gev
   TTreeReaderArray<Float_t> ecal_reco_x(myReader, "EcalEndcapNClusters.position.x");
   TTreeReaderArray<Float_t> ecal_reco_y(myReader, "EcalEndcapNClusters.position.y");
 
+  TTreeReaderArray<Float_t> ebarell_truth_E(myReader, "EcalBarrelTruthClusters.energy");
+  TTreeReaderArray<Float_t> ebarell_truth_theta(myReader, "EcalBarrelTruthClusters.intrinsicTheta");
+  TTreeReaderArray<Float_t> ebarell_truth_phi(myReader, "EcalBarrelTruthClusters.intrinsicPhi");
+  TTreeReaderArray<Float_t> ebarell_truth_x(myReader, "EcalBarrelTruthClusters.position.x");
+  TTreeReaderArray<Float_t> ebarell_truth_y(myReader, "EcalBarrelTruthClusters.position.y");
+
+  TTreeReaderArray<Float_t> ebarell_reco_E(myReader, "EcalBarrelClusters.energy");
+  TTreeReaderArray<Float_t> ebarell_reco_theta(myReader, "EcalBarrelClusters.intrinsicTheta");
+  TTreeReaderArray<Float_t> ebarell_reco_phi(myReader, "EcalBarrelClusters.intrinsicPhi");
+  TTreeReaderArray<Float_t> ebarell_reco_x(myReader, "EcalBarrelClusters.position.x");
+  TTreeReaderArray<Float_t> ebarell_reco_y(myReader, "EcalBarrelClusters.position.y");
+
   TCanvas *can = new TCanvas("can", "can", 1200, 1000);
   can->SetMargin(0.09, 0.1, 0.1, 0.06);
 
@@ -315,15 +330,19 @@ void readHCalRecoReader(TString inFileName = "eicrecon_neutron_50000events_p5gev
 
   ClusterHists hcalRecoHist("HCal_Reco");
   ClusterHists ecalRecoHist("ECal_Reco");
+  ClusterHists ebarellRecHist("EBarell_Reco");
   ClusterHists sumRecoHist("Sum_Reco");
 
   ClusterHists hcalTruthHist("HCal_Truth");
   ClusterHists ecalTruthHist("ECal_Truth");
+  ClusterHists ebarellTruthHist("EBarell_Truth");
   ClusterHists sumTruthHist("Sum_Truth");
 
   //////////////////////////////////////////////////////////////////////
 
-  Int_t nEvents = myReader.GetEntries();
+  //////////////////////////////////////////////////////////////////////
+
+  Int_t nEvents = myReader.GetEntries() / 10;
   cout << "Total Events: " << nEvents << endl;
 
   for (Int_t iEvent = 0; iEvent < nEvents; ++iEvent)
@@ -355,12 +374,20 @@ void readHCalRecoReader(TString inFileName = "eicrecon_neutron_50000events_p5gev
     Int_t indexHClusterReco = getMaximumEnergyIndex(hcal_reco_E);
     Int_t indexEClusterReco = getMaximumEnergyIndex(ecal_reco_E);
     Int_t indexEClusterTruth = getMaximumEnergyIndex(ecal_truth_E);
+    Int_t indexEBarellClusterReco = getMaximumEnergyIndex(ebarell_reco_E);
+    Int_t indexEBarellClusterTruth = getMaximumEnergyIndex(ebarell_truth_E);
 
-    if (indexHClusterReco < 0 && indexEClusterReco < 0)
-      continue;
+    // if (indexHClusterReco < 0 && indexEClusterReco < 0)
+    //   continue;
 
     Cluster hcalReco;
     Cluster ecalReco;
+    Cluster ebarellReco;
+
+    Cluster hcalTruth;
+    Cluster ecalTruth;
+    Cluster ebarellTruth;
+
     if (indexHClusterReco >= 0) // only hcal
     {
       hcalReco.energy = hcal_reco_E[indexHClusterReco];
@@ -369,9 +396,23 @@ void readHCalRecoReader(TString inFileName = "eicrecon_neutron_50000events_p5gev
       hcalReco.x = hcal_reco_x[indexHClusterReco];
       hcalReco.y = hcal_reco_y[indexHClusterReco];
       hcalReco = hcalReco - mc;
+
+      if (indexEClusterReco < 0 && indexEBarellClusterReco < 0)
+        hcalRecoHist.Fill(hcalReco);
     }
-    if (indexEClusterReco < 0)
-      hcalRecoHist.Fill(hcalReco);
+
+    if (indexEBarellClusterReco >= 0)
+    {
+      ebarellReco.energy = ebarell_reco_E[indexEBarellClusterReco];
+      ebarellReco.theta = ebarell_reco_theta[indexEBarellClusterReco];
+      ebarellReco.phi = ebarell_reco_phi[indexEBarellClusterReco];
+      ebarellReco.x = ebarell_reco_x[indexEBarellClusterReco];
+      ebarellReco.y = ebarell_reco_y[indexEBarellClusterReco];
+      ebarellReco = ebarellReco - mc;
+
+      if (indexHClusterReco < 0)
+        ebarellRecHist.Fill(ebarellReco);
+    }
 
     if (indexEClusterReco >= 0) // only hcal
     {
@@ -381,9 +422,10 @@ void readHCalRecoReader(TString inFileName = "eicrecon_neutron_50000events_p5gev
       ecalReco.x = ecal_reco_x[indexEClusterReco];
       ecalReco.y = ecal_reco_y[indexEClusterReco];
       ecalReco = ecalReco - mc;
+
+      if (indexHClusterReco < 0)
+        ecalRecoHist.Fill(ecalReco);
     }
-    if (indexHClusterReco < 0)
-      ecalRecoHist.Fill(ecalReco);
 
     if (indexHClusterReco >= 0 && indexEClusterReco >= 0)
     {
@@ -393,8 +435,6 @@ void readHCalRecoReader(TString inFileName = "eicrecon_neutron_50000events_p5gev
       sumRecoHist.Fill(sumReco);
     }
 
-    Cluster hcalTruth;
-    Cluster ecalTruth;
     if (indexHClusterTruth >= 0) // only hcal
     {
       hcalTruth.energy = hcal_truth_E[indexHClusterTruth];
@@ -403,11 +443,25 @@ void readHCalRecoReader(TString inFileName = "eicrecon_neutron_50000events_p5gev
       hcalTruth.x = hcal_truth_x[indexHClusterTruth];
       hcalTruth.y = hcal_truth_y[indexHClusterTruth];
       hcalTruth = hcalTruth - mc;
-    }
-    if (indexEClusterTruth < 0)
-      hcalTruthHist.Fill(hcalTruth);
 
-    if (indexEClusterTruth >= 0) // only hcal
+      if (indexEClusterTruth < 0 && indexEBarellClusterTruth < 0)
+        hcalTruthHist.Fill(hcalTruth);
+    }
+
+    if (indexEBarellClusterTruth >= 0)
+    {
+      ebarellTruth.energy = ebarell_truth_E[indexEBarellClusterTruth];
+      ebarellTruth.theta = ebarell_truth_theta[indexEBarellClusterTruth];
+      ebarellTruth.phi = ebarell_truth_phi[indexEBarellClusterTruth];
+      ebarellTruth.x = ebarell_truth_x[indexEBarellClusterTruth];
+      ebarellTruth.y = ebarell_truth_y[indexEBarellClusterTruth];
+      ebarellTruth = ebarellTruth - mc;
+
+      if (indexHClusterTruth < 0)
+        ebarellTruthHist.Fill(ebarellTruth);
+    }
+
+    if (indexEClusterTruth >= 0) // only ecal
     {
       ecalTruth.energy = ecal_truth_E[indexEClusterTruth];
       ecalTruth.theta = ecal_truth_theta[indexEClusterTruth];
@@ -415,9 +469,10 @@ void readHCalRecoReader(TString inFileName = "eicrecon_neutron_50000events_p5gev
       ecalTruth.x = ecal_truth_x[indexEClusterTruth];
       ecalTruth.y = ecal_truth_y[indexEClusterTruth];
       ecalTruth = ecalTruth - mc;
+
+      if (indexHClusterTruth < 0)
+        ecalTruthHist.Fill(ecalTruth);
     }
-    if (indexHClusterTruth < 0)
-      ecalTruthHist.Fill(ecalTruth);
 
     if (indexHClusterTruth >= 0 && indexEClusterTruth >= 0)
     {
@@ -466,11 +521,13 @@ void readHCalRecoReader(TString inFileName = "eicrecon_neutron_50000events_p5gev
   can->SaveAs(outPdf);
 
   hcalRecoHist.Draw(can, outPdf);
+  ebarellRecHist.Draw(can, outPdf);
   ecalRecoHist.Draw(can, outPdf);
   sumRecoHist.Draw(can, outPdf);
   hcalRecoHist.DrawTogether(can, outPdf, ecalRecoHist, sumRecoHist);
 
   hcalTruthHist.Draw(can, outPdf);
+  ebarellTruthHist.Draw(can, outPdf);
   ecalTruthHist.Draw(can, outPdf);
   sumTruthHist.Draw(can, outPdf);
   hcalTruthHist.DrawTogether(can, outPdf, ecalTruthHist, sumTruthHist);
@@ -494,7 +551,7 @@ void readHCalRecoReader(TString inFileName = "eicrecon_neutron_50000events_p5gev
     cout << "Theta =" << thetaString << endl;
   }
 
-  TH1D *hResolution = new TH1D(Form("hResolutionPhi%sTheta%s", phiString.data(), thetaString.data()), "FWHM values", 12, 0, 12);
+  TH1D *hResolution = new TH1D(Form("hResolutionPhi%sTheta%s", phiString.data(), thetaString.data()), "Sigma values", 12, 0, 12);
   hResolution->GetXaxis()->SetBinLabel(1, "hcal+ecal #theta");
   hResolution->SetBinContent(1, fwhmThetaSum);
   hResolution->GetXaxis()->SetBinLabel(2, "hcal+ecal #phi");
