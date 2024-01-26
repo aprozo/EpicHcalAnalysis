@@ -84,7 +84,7 @@ struct ClusterHists
     hThetaResol = new TH1D("hThetaResolution_" + _name, _name + " Cluster #theta Resolution ; #Delta#theta; Entries", 500, 1, 1);
     hPhiResol = new TH1D("hPhiResolution_" + _name, _name + " Cluster #phi Resolution; #Delta#phi; Entries", 500, 1, 1);
     hEnergy = new TH1D("hEnergy_" + _name, _name + " Cluster energy; E [GeV]; Entries", 10000, 0, 10);
-    hPos = new TH2D("hPosition_" + _name, _name + " Cluster position x,y; x [mm]; y [mm]; Entries", 300, -1500, 1500, 300, -1500, 1500);
+    hPos = new TH2D("hPosition_" + _name, _name + " Cluster position x,y; x [mm]; y [mm]; Entries", 500, -3000, 3000, 500, -3000, 3000);
 
     hPhiEnergy = new TH2D("hPhiEnergy_" + _name, _name + " Cluster #phi vs Energy; #phi; Energy", 100, -TMath::Pi(), TMath::Pi(), 100, 0, 10);
     name = _name;
@@ -112,7 +112,7 @@ struct ClusterHists
     can->SaveAs(outPdf);
   }
 
-  void DrawTogether(TCanvas *can, TString outPdf, ClusterHists &ecalHists, ClusterHists &sumHists)
+  void DrawTogether(TCanvas *can, TString outPdf, ClusterHists &ecalHists, ClusterHists &sumHists, ClusterHists &scatteredHcal)
   {
     can->cd();
     sumHists.hPhiResol->SetTitle("ECal, HCal, Sum #phi Resolution; #Delta#phi; Entries");
@@ -120,15 +120,21 @@ struct ClusterHists
     sumHists.hPhiResol->SetLineColor(kBlack);
     sumHists.hPhiResol->GetYaxis()->SetRangeUser(0, 1.2 * getMaximum(sumHists.hPhiResol, ecalHists.hPhiResol, hPhiResol));
     sumHists.hPhiResol->Draw("hist");
+    ecalHists.hPhiResol->SetMarkerColor(kBlue);
+    ecalHists.hPhiResol->SetLineColor(kBlue);
     ecalHists.hPhiResol->Draw("same");
     hPhiResol->SetMarkerColor(kRed);
     hPhiResol->SetLineColor(kRed);
     hPhiResol->Draw("same");
+    scatteredHcal.hPhiResol->SetMarkerColor(kViolet);
+    scatteredHcal.hPhiResol->SetLineColor(kViolet);
+    scatteredHcal.hPhiResol->Draw("same");
 
     TLegend leg(0.4, 0.7, 0.55, 0.9);
-    leg.AddEntry(ecalHists.hPhiResol, "ECal", "l");
-    leg.AddEntry(hPhiResol, "HCal", "l");
-    leg.AddEntry(sumHists.hPhiResol, "Sum", "l");
+    leg.AddEntry(ecalHists.hPhiResol, "ECal only", "l");
+    leg.AddEntry(hPhiResol, "HCal only", "l");
+    leg.AddEntry(sumHists.hPhiResol, "HCal+ECal", "l");
+    leg.AddEntry(scatteredHcal.hPhiResol, "Scattered HCal", "l");
     leg.Draw();
 
     can->SaveAs(outPdf);
@@ -137,10 +143,16 @@ struct ClusterHists
     sumHists.hThetaResol->SetLineColor(kBlack);
     sumHists.hThetaResol->GetYaxis()->SetRangeUser(0, 1.2 * getMaximum(sumHists.hThetaResol, ecalHists.hThetaResol, hThetaResol));
     sumHists.hThetaResol->Draw("hist");
+    ecalHists.hThetaResol->SetMarkerColor(kBlue);
+    ecalHists.hThetaResol->SetLineColor(kBlue);
     ecalHists.hThetaResol->Draw("same");
     hThetaResol->SetMarkerColor(kRed);
     hThetaResol->SetLineColor(kRed);
     hThetaResol->Draw("same");
+
+    scatteredHcal.hThetaResol->SetMarkerColor(kViolet);
+    scatteredHcal.hThetaResol->SetLineColor(kViolet);
+    scatteredHcal.hThetaResol->Draw("same");
 
     leg.Draw();
     // TLatex *tl = new TLatex();
@@ -153,10 +165,16 @@ struct ClusterHists
     sumHists.hTheta->SetLineColor(kBlack);
     sumHists.hTheta->GetYaxis()->SetRangeUser(0, 1.2 * getMaximum(sumHists.hTheta, ecalHists.hTheta, hTheta));
     sumHists.hTheta->Draw("hist");
+    ecalHists.hTheta->SetMarkerColor(kBlue);
+    ecalHists.hTheta->SetLineColor(kBlue);
+
     ecalHists.hTheta->Draw("same");
     hTheta->SetMarkerColor(kRed);
     hTheta->SetLineColor(kRed);
     hTheta->Draw("same");
+    scatteredHcal.hTheta->SetMarkerColor(kViolet);
+    scatteredHcal.hTheta->SetLineColor(kViolet);
+    scatteredHcal.hTheta->Draw("same");
 
     leg.Draw();
     can->SaveAs(outPdf);
@@ -166,21 +184,26 @@ struct ClusterHists
     sumHists.hPhi->SetLineColor(kBlack);
     sumHists.hPhi->GetYaxis()->SetRangeUser(0, 1.2 * getMaximum(sumHists.hPhi, ecalHists.hPhi, hPhi));
     sumHists.hPhi->Draw("hist");
+    ecalHists.hPhi->SetMarkerColor(kBlue);
+    ecalHists.hPhi->SetLineColor(kBlue);
     ecalHists.hPhi->Draw("same");
     hPhi->SetMarkerColor(kRed);
     hPhi->SetLineColor(kRed);
     hPhi->Draw("same");
+    scatteredHcal.hPhi->SetMarkerColor(kViolet);
+    scatteredHcal.hPhi->SetLineColor(kViolet);
+    scatteredHcal.hPhi->Draw("same");
 
     leg.Draw();
     can->SaveAs(outPdf);
   }
 
-  Double_t calculateFWHM(TString varname)
+  Double_t getSigma(TString varname)
   {
     TH1D *hist;
-    TF1 *fitfunc = new TF1("fitfunc", "gaus", -4, 4);
+    TF1 *fitfunc = new TF1("fitfunc", "gaus", -1, 1);
     fitfunc->SetParNames("Area", "Mean", "Sigma");
-    fitfunc->SetLineColor(kViolet);
+    fitfunc->SetLineColor(kGreen);
 
     if (varname.Contains("theta"))
     {
@@ -206,6 +229,7 @@ struct ClusterHists
     // Double_t x_min = hist->GetMean() - hist->GetStdDev();
     // Double_t x_max = hist->GetMean() + hist->GetStdDev();
     // hist->GetXaxis()->SetRangeUser(x_min, x_max);
+    hist->GetXaxis()->SetRangeUser(-1, 1);
 
     fitfunc->SetParameters(hist->GetMaximum(), hist->GetMean(), hist->GetStdDev());
     // fitfunc->SetParLimits(0, 0, 1.2 * hist->GetMaximum());
@@ -215,19 +239,20 @@ struct ClusterHists
     hist->SetMarkerSize(1.5);
     hist->SetLineColor(kBlue);
     hist->SetMarkerColor(kBlack);
-    hist->Fit("fitfunc", "MR", "");
+    hist->Fit("fitfunc", "EQMR", "");
     hist->Draw("p");
     Double_t sigma = fitfunc->GetParameter(2);
+    Double_t stdDev = hist->GetStdDev(); // sigma * 2.355;
 
-    Double_t fwhm = hist->GetStdDev(); // sigma * 2.355;
-    // Double_t fwhm = sigma * 2.355;
+    // Double_t sigma = sigma * 2.355;
     TLatex *tl = new TLatex();
     tl->SetTextSize(0.05);
     tl->DrawLatexNDC(0.12, 0.5, "#" + varname + " " + name);
     tl->DrawLatexNDC(0.12, 0.4, Form("Mean ~ %.2f", hist->GetMean()));
-    tl->DrawLatexNDC(0.12, 0.3, Form("Sigma ~ %.2f", fwhm));
+    tl->DrawLatexNDC(0.12, 0.3, Form("Sigma ~ %.2f", sigma));
+    tl->DrawLatexNDC(0.12, 0.2, Form("StdDev ~ %.2f", stdDev));
 
-    return fwhm;
+    return stdDev;
   }
 
   void Write(TDirectory *output)
@@ -256,6 +281,8 @@ struct ClusterHists
 
 // void readHCalRecoReader(TString inFileName = "eicrecon_neutron_5GeV.edm4eic.root", TString outFileName = "test.root")
 void readHCalRecoReader(TString inFileName = "../output_eicrecon.edm4eic.root", TString outFileName = "test.root")
+
+// void readHCalRecoReader(TString inFileName = "../output_eicrecon.edm4eic.root", TString outFileName = "test.root")
 {
 
   //==========Style of the plot============
@@ -331,18 +358,21 @@ void readHCalRecoReader(TString inFileName = "../output_eicrecon.edm4eic.root", 
   ClusterHists hcalRecoHist("HCal_Reco");
   ClusterHists ecalRecoHist("ECal_Reco");
   ClusterHists ebarellRecHist("EBarell_Reco");
-  ClusterHists sumRecoHist("Sum_Reco");
+  ClusterHists hcalAndEcalSumHist("HcalAndEcalSum_Reco");
+  ClusterHists scatteredHcal("scattered_Hcal");
 
   ClusterHists hcalTruthHist("HCal_Truth");
   ClusterHists ecalTruthHist("ECal_Truth");
   ClusterHists ebarellTruthHist("EBarell_Truth");
-  ClusterHists sumTruthHist("Sum_Truth");
-
+  ClusterHists hcalAndEcalSumTruthHist("HcalAndEcalSum_Truth");
+  ClusterHists scatteredHcalTruth("scattered_Hcal_Truth");
+  Double_t maxEcalTheta = 0.;
+  Double_t minEcalTheta = 1000.;
   //////////////////////////////////////////////////////////////////////
 
   //////////////////////////////////////////////////////////////////////
 
-  Int_t nEvents = myReader.GetEntries() / 10;
+  Int_t nEvents = myReader.GetEntries() / 10.;
   cout << "Total Events: " << nEvents << endl;
 
   for (Int_t iEvent = 0; iEvent < nEvents; ++iEvent)
@@ -399,6 +429,8 @@ void readHCalRecoReader(TString inFileName = "../output_eicrecon.edm4eic.root", 
 
       if (indexEClusterReco < 0 && indexEBarellClusterReco < 0)
         hcalRecoHist.Fill(hcalReco);
+      else
+        scatteredHcal.Fill(hcalReco);
     }
 
     if (indexEBarellClusterReco >= 0)
@@ -425,14 +457,20 @@ void readHCalRecoReader(TString inFileName = "../output_eicrecon.edm4eic.root", 
 
       if (indexHClusterReco < 0)
         ecalRecoHist.Fill(ecalReco);
+
+      if (ecalReco.theta > maxEcalTheta)
+        maxEcalTheta = ecalReco.theta;
+
+      if (ecalReco.theta < minEcalTheta)
+        minEcalTheta = ecalReco.theta;
     }
 
     if (indexHClusterReco >= 0 && indexEClusterReco >= 0)
     {
-      Cluster sumReco = hcalReco;
-      sumReco = hcalReco.addEcalWithSampleCoefficient(1.58, ecalReco);
-      sumReco = sumReco - mc;
-      sumRecoHist.Fill(sumReco);
+      Cluster hcalAndEcalSum = hcalReco;
+      hcalAndEcalSum = hcalReco.addEcalWithSampleCoefficient(1.58, ecalReco);
+      hcalAndEcalSum = hcalAndEcalSum - mc;
+      hcalAndEcalSumHist.Fill(hcalAndEcalSum);
     }
 
     if (indexHClusterTruth >= 0) // only hcal
@@ -446,6 +484,8 @@ void readHCalRecoReader(TString inFileName = "../output_eicrecon.edm4eic.root", 
 
       if (indexEClusterTruth < 0 && indexEBarellClusterTruth < 0)
         hcalTruthHist.Fill(hcalTruth);
+      else
+        scatteredHcalTruth.Fill(hcalTruth);
     }
 
     if (indexEBarellClusterTruth >= 0)
@@ -476,10 +516,10 @@ void readHCalRecoReader(TString inFileName = "../output_eicrecon.edm4eic.root", 
 
     if (indexHClusterTruth >= 0 && indexEClusterTruth >= 0)
     {
-      Cluster sumTruth = hcalTruth;
-      sumTruth = hcalTruth.addEcalWithSampleCoefficient(1.58, ecalTruth);
-      sumTruth = sumTruth - mc;
-      sumTruthHist.Fill(sumTruth);
+      Cluster hcalAndEcalSumTruth = hcalTruth;
+      hcalAndEcalSumTruth = hcalTruth.addEcalWithSampleCoefficient(1.58, ecalTruth);
+      hcalAndEcalSumTruth = hcalAndEcalSumTruth - mc;
+      hcalAndEcalSumTruthHist.Fill(hcalAndEcalSumTruth);
     }
 
   } // Event For loop
@@ -492,45 +532,44 @@ void readHCalRecoReader(TString inFileName = "../output_eicrecon.edm4eic.root", 
   hPtEtaMc->Draw("colz");
   can->SaveAs(outPdf);
 
-  Double_t fwhmThetaSum = sumRecoHist.calculateFWHM("theta");
+  Double_t sigmaThetaSum = hcalAndEcalSumHist.getSigma("theta");
   can->SaveAs(outPdf);
-  Double_t fwhmPhiSum = sumRecoHist.calculateFWHM("phi");
+  Double_t sigmaPhiSum = hcalAndEcalSumHist.getSigma("phi");
   can->SaveAs(outPdf);
-  Double_t fwhmThetaHcal = hcalRecoHist.calculateFWHM("theta");
+  Double_t sigmaThetaHcal = hcalRecoHist.getSigma("theta");
   can->SaveAs(outPdf);
-  Double_t fwhmPhiHcal = hcalRecoHist.calculateFWHM("phi");
+  Double_t sigmaPhiHcal = hcalRecoHist.getSigma("phi");
   can->SaveAs(outPdf);
-
-  Double_t fwhmThetaEcal = ecalRecoHist.calculateFWHM("theta");
+  Double_t sigmaThetaEcal = ecalRecoHist.getSigma("theta");
   can->SaveAs(outPdf);
-  Double_t fwhmPhiEcal = ecalRecoHist.calculateFWHM("phi");
-  can->SaveAs(outPdf);
-
-  Double_t fwhmThetaSumTruth = sumTruthHist.calculateFWHM("theta");
-  can->SaveAs(outPdf);
-  Double_t fwhmPhiSumTruth = sumTruthHist.calculateFWHM("phi");
-  can->SaveAs(outPdf);
-  Double_t fwhmThetaHcalTruth = hcalTruthHist.calculateFWHM("theta");
-  can->SaveAs(outPdf);
-  Double_t fwhmPhiHcalTruth = hcalTruthHist.calculateFWHM("phi");
+  Double_t sigmaPhiEcal = ecalRecoHist.getSigma("phi");
   can->SaveAs(outPdf);
 
-  Double_t fwhmThetaEcalTruth = ecalTruthHist.calculateFWHM("theta");
+  Double_t sigmaThetahcalAndEcalSumTruth = hcalAndEcalSumTruthHist.getSigma("theta");
   can->SaveAs(outPdf);
-  Double_t fwhmPhiEcalTruth = ecalTruthHist.calculateFWHM("phi");
+  Double_t sigmaPhihcalAndEcalSumTruth = hcalAndEcalSumTruthHist.getSigma("phi");
+  can->SaveAs(outPdf);
+  Double_t sigmaThetaHcalTruth = hcalTruthHist.getSigma("theta");
+  can->SaveAs(outPdf);
+  Double_t sigmaPhiHcalTruth = hcalTruthHist.getSigma("phi");
+  can->SaveAs(outPdf);
+
+  Double_t sigmaThetaEcalTruth = ecalTruthHist.getSigma("theta");
+  can->SaveAs(outPdf);
+  Double_t sigmaPhiEcalTruth = ecalTruthHist.getSigma("phi");
   can->SaveAs(outPdf);
 
   hcalRecoHist.Draw(can, outPdf);
   ebarellRecHist.Draw(can, outPdf);
   ecalRecoHist.Draw(can, outPdf);
-  sumRecoHist.Draw(can, outPdf);
-  hcalRecoHist.DrawTogether(can, outPdf, ecalRecoHist, sumRecoHist);
+  hcalAndEcalSumHist.Draw(can, outPdf);
+  hcalRecoHist.DrawTogether(can, outPdf, ecalRecoHist, hcalAndEcalSumHist, scatteredHcal);
 
   hcalTruthHist.Draw(can, outPdf);
   ebarellTruthHist.Draw(can, outPdf);
   ecalTruthHist.Draw(can, outPdf);
-  sumTruthHist.Draw(can, outPdf);
-  hcalTruthHist.DrawTogether(can, outPdf, ecalTruthHist, sumTruthHist);
+  hcalAndEcalSumTruthHist.Draw(can, outPdf);
+  hcalTruthHist.DrawTogether(can, outPdf, ecalTruthHist, hcalAndEcalSumTruthHist, scatteredHcalTruth);
 
   output->cd();
 
@@ -553,30 +592,30 @@ void readHCalRecoReader(TString inFileName = "../output_eicrecon.edm4eic.root", 
 
   TH1D *hResolution = new TH1D(Form("hResolutionPhi%sTheta%s", phiString.data(), thetaString.data()), "Sigma values", 12, 0, 12);
   hResolution->GetXaxis()->SetBinLabel(1, "hcal+ecal #theta");
-  hResolution->SetBinContent(1, fwhmThetaSum);
+  hResolution->SetBinContent(1, sigmaThetaSum);
   hResolution->GetXaxis()->SetBinLabel(2, "hcal+ecal #phi");
-  hResolution->SetBinContent(2, fwhmPhiSum);
+  hResolution->SetBinContent(2, sigmaPhiSum);
   hResolution->GetXaxis()->SetBinLabel(3, "hcal #theta");
-  hResolution->SetBinContent(3, fwhmThetaHcal);
+  hResolution->SetBinContent(3, sigmaThetaHcal);
   hResolution->GetXaxis()->SetBinLabel(4, "hcal #phi");
-  hResolution->SetBinContent(4, fwhmPhiHcal);
+  hResolution->SetBinContent(4, sigmaPhiHcal);
   hResolution->GetXaxis()->SetBinLabel(5, "ecal #theta");
-  hResolution->SetBinContent(5, fwhmThetaEcal);
+  hResolution->SetBinContent(5, sigmaThetaEcal);
   hResolution->GetXaxis()->SetBinLabel(6, "ecal #phi");
-  hResolution->SetBinContent(6, fwhmPhiEcal);
+  hResolution->SetBinContent(6, sigmaPhiEcal);
 
   hResolution->GetXaxis()->SetBinLabel(7, "hcal+ecal #theta Truth");
-  hResolution->SetBinContent(7, fwhmThetaSumTruth);
+  hResolution->SetBinContent(7, sigmaThetahcalAndEcalSumTruth);
   hResolution->GetXaxis()->SetBinLabel(8, "hcal+ecal #phi Truth");
-  hResolution->SetBinContent(8, fwhmPhiSumTruth);
+  hResolution->SetBinContent(8, sigmaPhihcalAndEcalSumTruth);
   hResolution->GetXaxis()->SetBinLabel(9, "hcal #theta Truth");
-  hResolution->SetBinContent(9, fwhmThetaHcalTruth);
+  hResolution->SetBinContent(9, sigmaThetaHcalTruth);
   hResolution->GetXaxis()->SetBinLabel(10, "hcal #phi Truth");
-  hResolution->SetBinContent(10, fwhmPhiHcalTruth);
+  hResolution->SetBinContent(10, sigmaPhiHcalTruth);
   hResolution->GetXaxis()->SetBinLabel(11, "ecal #theta Truth");
-  hResolution->SetBinContent(11, fwhmThetaEcalTruth);
+  hResolution->SetBinContent(11, sigmaThetaEcalTruth);
   hResolution->GetXaxis()->SetBinLabel(12, "ecal #phi Truth");
-  hResolution->SetBinContent(12, fwhmPhiEcalTruth);
+  hResolution->SetBinContent(12, sigmaPhiEcalTruth);
 
   can->cd();
   hResolution->Draw("hist");
@@ -590,11 +629,18 @@ void readHCalRecoReader(TString inFileName = "../output_eicrecon.edm4eic.root", 
 
   hcalRecoHist.Write(dir);
   ecalRecoHist.Write(dir);
-  sumRecoHist.Write(dir);
+  hcalAndEcalSumHist.Write(dir);
+  ebarellRecHist.Write(dir);
+  scatteredHcal.Write(dir);
+
   hcalTruthHist.Write(dir);
   ecalTruthHist.Write(dir);
-  sumTruthHist.Write(dir);
+  hcalAndEcalSumTruthHist.Write(dir);
+  ebarellTruthHist.Write(dir);
+  scatteredHcalTruth.Write(dir);
 
+  cout << "Max Ecal Theta: " << maxEcalTheta << endl;
+  cout << "Min Ecal Theta: " << minEcalTheta << endl;
   output->Save();
   output->Close();
 }
