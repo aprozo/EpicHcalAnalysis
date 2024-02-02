@@ -18,7 +18,9 @@
 
 const double alongPhiAngle = 48;
 
-const double globalZ = -395; // first HCAL layer
+// const double globalZ = -395; // first HCAL layer
+const double globalZ = -395 + 55 / 2; // middle HCAL layer
+//const double globalZ = -395 + 55 / 2; // 1 interaction length HCAL layer
 
 const double rmin = 14;  // first HCAL layer
 const double rmax = 270; // first HCAL layer
@@ -557,3 +559,9 @@ void plot2DResolutionScanAlongPhi(TString outFile = "scanAlongPhi")
 
     // output->Close();
 }
+
+
+//TO do:   delta x , delta y, delta r 
+
+// event display ? 
+

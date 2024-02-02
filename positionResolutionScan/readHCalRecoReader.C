@@ -23,7 +23,7 @@
 Int_t getMaximumEnergyIndex(TTreeReaderArray<Float_t> &energyVector)
 {
   Int_t maxIndex = -1;
-  Float_t maxEnergy = 0;
+  Float_t maxEnergy = 0.;
   for (int i = 0; i < energyVector.GetSize(); ++i)
   {
     if (energyVector[i] > maxEnergy)
