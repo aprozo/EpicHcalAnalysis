@@ -10,6 +10,7 @@
 #include "TH2.h"
 #include "TGraph.h"
 #include "TMath.h"
+#include "TStyle.h"
 
 using namespace std;
 
@@ -64,6 +65,14 @@ ostream &operator<<(ostream &os, const set<Double_t> &set)
 void calculateAngles()
 {
     TGraph *tilePhiTheta = new TGraph();
+    TGraph *tileXY = new TGraph();
+    TGraph *tilePhiEta = new TGraph();
+
+    gStyle->SetOptStat(0);
+    gStyle->SetOptTitle(0);
+
+    gStyle->SetTitleOffset(0.8, "x");
+    gStyle->SetTitleOffset(1.0, "y");
 
     set<PointHit> tileValues;
 
@@ -106,11 +115,19 @@ void calculateAngles()
 
             double eta = etaMin + iEta * etaStep;
             double phi = phiMin + iPhi * phiStep;
+            if (phi == 0)
+                phi = 0.001;
 
             double theta = 180 * getTheta(eta) / TMath::Pi();
+            double x = globalZ * tan(getTheta(eta)) * cos(phi * TMath::Pi() / 180);
+            double y = globalZ * tan(getTheta(eta)) * sin(phi * TMath::Pi() / 180);
+
+            tileXY->SetPoint(tileXY->GetN(), x, y);
             tileMap->Fill(phi, theta, counter);
             tileValues.insert(PointHit(phi, theta));
             tilePhiTheta->SetPoint(tilePhiTheta->GetN(), phi, theta);
+            tilePhiEta->SetPoint(tilePhiEta->GetN(), phi, eta);
+
             counter += 1;
         }
     }
@@ -123,14 +140,14 @@ void calculateAngles()
     fout << tileValues;
     fout.close();
 
-    TCanvas *c1 = new TCanvas("c1", "c1", 600, 1000);
+    TCanvas *c1 = new TCanvas("c1", "c1", 1000, 1000);
     c1->SaveAs("tilePhiTheta.pdf[");
     tilePhiTheta->SetMarkerStyle(20);
+
     TAxis *axis = tilePhiTheta->GetXaxis();
 
-    tilePhiTheta->SetTitle("Sector Hit Points ;phi;theta");
-    tilePhiTheta->GetYaxis()->SetTitleOffset(1.1);
-    tilePhiTheta->GetXaxis()->SetTitleOffset(0.6);
+    tilePhiTheta->SetTitle("Sector Hit Points  ;#phi, deg;#theta,deg");
+
     gPad->SetMargin(0.15, 0.01, 0.1, 0.01);
     tilePhiTheta->Draw("AP");
     tilePhiTheta->SetMarkerStyle(20);
@@ -139,6 +156,16 @@ void calculateAngles()
     c1->SaveAs("tilePhiTheta.pdf");
 
     tileMap->Draw("colz");
+    c1->SaveAs("tilePhiTheta.pdf");
+
+    tileXY->SetTitle("Sector Hit Points ;x, cm;y , cm");
+    tileXY->SetMarkerStyle(20);
+    tileXY->Draw("AP");
+    c1->SaveAs("tilePhiTheta.pdf");
+
+    tilePhiEta->SetTitle("Sector Hit Points ;#phi, deg;#eta");
+    tilePhiEta->SetMarkerStyle(20);
+    tilePhiEta->Draw("AP");
     c1->SaveAs("tilePhiTheta.pdf");
 
     c1->SaveAs("tilePhiTheta.pdf]");

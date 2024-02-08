@@ -13,7 +13,8 @@
 #include "TStyle.h"
 #include "TMath.h"
 
-const double globalZ = -395; // first HCAL layer
+const double globalZ = -395;             // middle HCAL layer
+const double globalZmid = -395 + 55 / 2; // middle HCAL layer
 
 const double rmin = 14;  // first HCAL layer
 const double rmax = 270; // first HCAL layer
@@ -177,8 +178,8 @@ struct TileHists
     void Fill(const Double_t phi, const Double_t theta, const Double_t sigma)
     {
         Double_t eta = getEta(theta);
-        Double_t x = globalZ * tan((180 - theta) * pi / 180) * cos(phi * pi / 180);
-        Double_t y = globalZ * tan((180 - theta) * pi / 180) * sin(phi * pi / 180);
+        Double_t x = getX(theta, phi);
+        Double_t y = getY(theta, phi);
 
         tilePhiEta->SetPoint(tilePhiEta->GetN(), phi, eta, sigma);
         tilePhiTheta->SetPoint(tilePhiTheta->GetN(), phi, theta, sigma);
@@ -232,8 +233,6 @@ void plot2DResolution(TString outFile = "sectorResolution")
         double theta = 180 * getTheta(eta) / TMath::Pi();
         thetaBins.push_back(theta);
     }
-
-    
 
     for (double iPhi = 0; iPhi <= nPhiBins; iPhi++) // 3 degree scan
     {
